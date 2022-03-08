@@ -6,7 +6,7 @@
 #include <sys/shm.h>
 #include <sys/mman.h>
 #include <fcntl.h>
-#include <wait.h>
+/* #include <wait.h> */
 #include <time.h>
 #include <unistd.h>
 
@@ -14,7 +14,7 @@
 int sudoku[9][9];
 
 /* Flags that are used to determine if row, column and boxes are valid */
-int validFlags[3] = {0,0,0};
+int validFlag = 1; /* assuming valid = 1 */
 
 /* Structure for passing data to threads */
 typedef struct {
@@ -40,7 +40,7 @@ void fileInput(FILE *file){
 }
 
 
-// checks all 9 rows to see if all rows are valid
+/* checks all 9 rows to see if all rows are valid */
 void *validRows(void* params){
     for(int i = 0; i < 9; i++){
         /* Reset flags for each row */
@@ -53,14 +53,13 @@ void *validRows(void* params){
                 flagRow[sudoku[i][j]-1] = 1;
             }
             else{
-                printf("INVALID ROW DETECTED. \n");
-                printf("Row: %d, Col: %d, Value: %d\n", i, j, sudoku[i][j]);
-                pthread_exit(0
-                );
+               /*  printf("INVALID ROW DETECTED. \n");
+                printf("Row: %d, Col: %d, Value: %d\n", i, j, sudoku[i][j]); */
+                validFlag = 0;
+                pthread_exit(0);
             }
         }
     }
-    validFlags[0] = 1;
     pthread_exit(0);
 }
 
@@ -73,17 +72,18 @@ void *validColumns(void* params){
             /*  ex. if sudoku[i][j] == 5, 
                 then it flagCol goes to 1 less than 5 and 
                 changes the flag to 1.  */
+                
             if(flagCol[sudoku[j][i]-1] == 0){
                 flagCol[sudoku[j][i]-1] = 1;
             }
             else{
-                printf("INVALID COLUMN DETECTED. \n");
-                printf("Row: %d, Col: %d, Value: %d\n", i, j, sudoku[i][j]);
+               /*  printf("INVALID COLUMN DETECTED. \n");
+                printf("Row: %d, Col: %d, Value: %d\n",j, i, sudoku[j][i]); */
+                validFlag = 0;
                 pthread_exit(0);
             }
         }
     }
-    validFlags[1] = 1;
     pthread_exit(0);
 }
 
@@ -104,13 +104,13 @@ void *validSquares(void* params){
                 flagSquare[temp-1] = 1;
             }
             else{
-                printf("INVALID SQUARE DETECTED. \n");
-                printf("Row: %d, Col: %d, Value: %d\n", i, j, sudoku[i][j]);
+               /*  printf("INVALID SQUARE DETECTED. \n");
+                printf("Row: %d, Col: %d, Value: %d\n", i, j, sudoku[i][j]); */
+                validFlag = 0;
                 pthread_exit(0);
             }
         }
     }
-    validFlags[2] = 1;
     pthread_exit(0);
 }
 
@@ -135,18 +135,20 @@ int main() {
     ftruncate(shm_fd, 4096);
     int *ptr = mmap(0, 4096, PROT_WRITE, MAP_SHARED, shm_fd, 0);*/
 
-    // Option 1: 11 thread, 9 for each square, 1 for all rows and 1 for all columns
+    /* Option 1: 11 thread, 9 for each square, 1 for all rows and 1 for all columns */
+    int thread_num = 0;
     pthread_t threads[11];
-    pthread_create(&threads[0], NULL, validRows, NULL);
-    pthread_create(&threads[1], NULL, validColumns, NULL);
+    pthread_create(&threads[thread_num], NULL, validRows, NULL);
+    pthread_create(&threads[thread_num++], NULL, validColumns, NULL);
 
     for(int i = 0; i<9; i++){
+        thread_num++;
         for(int j = 0; j<9; j++){
             if(i%3 == 0 && j%3==0){
                 parameters *data = (parameters*) malloc(sizeof(parameters));
                 data->row = i;
                 data->col = j;
-                pthread_create(&threads[j+2], NULL, validSquares, data);
+                pthread_create(&threads[thread_num], NULL, validSquares, data);
             }
         }
     }
@@ -155,14 +157,12 @@ int main() {
         pthread_join(threads[i], NULL);
     }
 
-    for(int i = 0; i < 3; i++){
-        if(validFlags[i] == 0){
-            printf("SUDOKU IS INVALID YOU DUMB ASS\n");
-            return EXIT_SUCCESS;
-        }
-    }
-    printf("yay");
-    return EXIT_SUCCESS;
+    
+    if(validFlag == 0){ /* valid when flag = 1 */
+        printf("SOLUTION: NO\n");
+       
+    } else
+        printf("SOLUTION: YES\n");
 
     return 0;
 }
