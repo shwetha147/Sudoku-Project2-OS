@@ -22,6 +22,10 @@ typedef struct {
     int col;
 }parameters;
 
+typedef struct {
+	int value;
+}oneVariable;
+
 /* Method that reads inputted sudoku puzzle */
 void fileInput(FILE *file){
     bool flag = true;
@@ -87,6 +91,46 @@ void *validColumns(void* params){
     pthread_exit(0);
 }
 
+/* checks 1 col to see if col are valid */
+void *validCol(void* params){
+    oneVariable *param = (oneVariable*) params;
+    int column = param->value;
+    for(int i = 0; i < 9; i++){
+        /* Reset flags for each row */
+        int flagCol[9] = {0,0,0,0,0,0,0,0,0}; 
+        if(flagCol[sudoku[i][column]-1] == 0){
+            flagCol[sudoku[i][column]-1] = 1;
+        }
+        else{
+             printf("INVALID COLUMN DETECTED. \n"); 
+            printf("Row: %d, Col: %d, Value: %d\n",i, column, sudoku[i][column]); 
+            validFlag = 0;
+            pthread_exit(0);
+        }
+    }
+    pthread_exit(0);
+}
+
+/* checks 1 col to see if col are valid */
+void *validR(void* params){
+    oneVariable *param = (oneVariable*) params;
+    int r = param->value;
+    for(int i = 0; i < 9; i++){
+        /* Reset flags for each row */
+        int flagCol[9] = {0,0,0,0,0,0,0,0,0}; 
+        if(flagCol[sudoku[r][i]-1] == 0){
+            flagCol[sudoku[r][i]-1] = 1;
+        }
+        else{
+            /*  printf("INVALID COLUMN DETECTED. \n");
+            printf("Row: %d, Col: %d, Value: %d\n",j, i, sudoku[j][i]); */
+            validFlag = 0;
+            pthread_exit(0);
+        }
+    }
+    pthread_exit(0);
+}
+
 /* checks all 9 square to see if all squares are valid */
 void *validSquares(void* params){
     int temp;
@@ -115,11 +159,12 @@ void *validSquares(void* params){
 }
 
 
-int main() {
+int main(int argc, char** argv) {
     /* Reading a sample file */ /* NEED TO ADD A USER INPUT HERE! */
 	FILE *board = fopen("board.txt", "r");
 	fileInput(board);
 
+    int input = atoi(argv[1]);
     /* Prints Sudoku Board */
     printf("Sudoku Board Inputted: \n");
     for(int i = 0; i < 9; i++){
@@ -128,39 +173,73 @@ int main() {
         }
         printf("\n");
     }
+    int nThreads = 0;
+    
+    switch(input){
+        case 1:
+            nThreads = 11;
+            break;
+        case 2:
+            nThreads = 27;
+            break;
+        case 3:
+            nThreads = 0;
+            break;
+        default:
+            nThreads = 0;
+    }
 
-
+    pthread_t threads[nThreads];
     /*int shm_fd;
     shm_fd = shm_open("VALID", O_CREAT | O_RDWR, 0666);
     ftruncate(shm_fd, 4096);
     int *ptr = mmap(0, 4096, PROT_WRITE, MAP_SHARED, shm_fd, 0);*/
-
-    /* Option 1: 11 thread, 9 for each square, 1 for all rows and 1 for all columns */
     int thread_num = 0;
-    pthread_t threads[11];
-    pthread_create(&threads[thread_num], NULL, validRows, NULL);
-    pthread_create(&threads[thread_num++], NULL, validColumns, NULL);
+    switch(input){
+        case 1:
+            /* Option 1: 11 thread, 9 for each square, 1 for all rows and 1 for all columns */
+            pthread_create(&threads[thread_num], NULL, validRows, NULL);
+            pthread_create(&threads[thread_num++], NULL, validColumns, NULL);
 
-    for(int i = 0; i<9; i++){
-        thread_num++;
-        for(int j = 0; j<9; j++){
-            if(i%3 == 0 && j%3==0){
-                parameters *data = (parameters*) malloc(sizeof(parameters));
-                data->row = i;
-                data->col = j;
-                pthread_create(&threads[thread_num], NULL, validSquares, data);
+            for(int i = 0; i<9; i++){ // 9 times
+                thread_num++;
+                for(int j = 0; j<9; j++){
+                    if(i%3 == 0 && j%3==0){ //9 times
+                        parameters *data = (parameters*) malloc(sizeof(parameters));
+                        data->row = i;
+                        data->col = j;
+                        pthread_create(&threads[thread_num], NULL, validSquares, data);
+                    }
+                }
             }
-        }
+            break;
+        case 2:
+            /* Option 2: 27 threads, 1 per square, 1 per row and 1 per column */
+            thread_num = 0;
+            for(int i = 0; i<9; i++){
+                for(int j = 0; j<9; j++){
+                    if(i%3 == 0 && j%3==0){
+                        parameters *data = (parameters*) malloc(sizeof(parameters));
+                        data->row = i;
+                        data->col = j;
+                        pthread_create(&threads[thread_num++], NULL, validSquares, data);
+                    }
+                }
+                oneVariable *data2 = (oneVariable*) malloc(sizeof(oneVariable));
+                data2->value = i;
+                pthread_create(&threads[thread_num++], NULL, validR, data2);
+                pthread_create(&threads[thread_num++], NULL, validCol, data2);
+            }
+            break;
     }
-
-    for (int i = 0; i<11; i++){
+    
+    for (int i = 0; i<nThreads; i++){
         pthread_join(threads[i], NULL);
     }
 
     
     if(validFlag == 0){ /* valid when flag = 1 */
         printf("SOLUTION: NO\n");
-       
     } else
         printf("SOLUTION: YES\n");
 
