@@ -206,12 +206,11 @@ int validSquaresProcess(void* params){
                 flagSquare[temp-1] = 1;
             }
             else{
-               
-                return 0;
+                return 1;
             }
         }
     }
-    return 1;
+    return 0;
 }
 
 int main(int argc, char** argv) {
@@ -333,9 +332,10 @@ int main(int argc, char** argv) {
                             data->col = j;
                             result = validSquaresProcess(data);
 
-                            if(result != 1) /* valid square */
+                            if(result == 1){
+                                /* valid square */
                                 *ptr = result;
-                            
+                            } 
                             _Exit(EXIT_SUCCESS);
                         } else {
                             int waitFlag;
@@ -344,10 +344,11 @@ int main(int argc, char** argv) {
                     }
                 }
             }
+            validFlag = !*ptr;
             break;
     }
     
-    validFlag = *ptr;
+    // validFlag = *ptr;
     shm_unlink("VALID");
     t = clock() - t;
     double time_tot = ((double)t/CLOCKS_PER_SEC);
