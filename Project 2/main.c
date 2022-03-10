@@ -1,3 +1,10 @@
+/**
+Riya Patel and Shwetha Raju
+CSC 345 - 01
+Project 2
+**/
+
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,12 +25,12 @@ int validFlag = 1; /* assuming valid = 1 */
 
 /* Structure for passing data to threads */
 typedef struct parameters{
-	int row;
+    int row;
     int col;
 }parameters;
 
 typedef struct {
-	int value;
+    int value;
 }oneVariable;
 
 // parameters *data = (parameters*) malloc(sizeof(parameters));
@@ -67,7 +74,7 @@ void *validRows(void* params){
     pthread_exit(0);
 }
 
-/* checks all 9 cols to see if all colss are valid */
+/* checks all 9 cols to see if all cols are valid */
 void *validColumns(void* params){
     for(int i = 0; i < 9; i++){
         /* Reset flags for each row */
@@ -75,8 +82,7 @@ void *validColumns(void* params){
         for(int j = 0; j< 9; j++){
             /*  ex. if sudoku[i][j] == 5, 
                 then it flagCol goes to 1 less than 5 and 
-                changes the flag to 1.  */
-                
+                changes the flag to 1.  */ 
             if(flagCol[sudoku[j][i]-1] == 0){
                 flagCol[sudoku[j][i]-1] = 1;
             }
@@ -90,7 +96,9 @@ void *validColumns(void* params){
     }
     pthread_exit(0);
 }
-/* checks 1 col to see if col are valid */
+
+
+/* checks 1 col to see if col is valid */
 void *validCol(void* params){
     oneVariable *param = (oneVariable*) params;
     int column = param->value;
@@ -101,8 +109,8 @@ void *validCol(void* params){
             flagCol[sudoku[i][column]-1] = 1;
         }
         else{
-            printf("INVALID COLUMN DETECTED. \n"); 
-            printf("Row: %d, Col: %d, Value: %d\n",i, column, sudoku[i][column]); 
+            /* printf("INVALID COLUMN DETECTED. \n"); 
+            printf("Row: %d, Col: %d, Value: %d\n",i, column, sudoku[i][column]); */
             validFlag = 0;
             pthread_exit(0);
         }
@@ -110,7 +118,7 @@ void *validCol(void* params){
     pthread_exit(0);
 }
 
-/* checks 1 col to see if col are valid */
+/* checks 1 row to see if row is valid */
 void *validR(void* params){
     oneVariable *param = (oneVariable*) params;
     int r = param->value;
@@ -121,7 +129,7 @@ void *validR(void* params){
             flagCol[sudoku[r][i]-1] = 1;
         }
         else{
-            /*  printf("INVALID COLUMN DETECTED. \n");
+            /*  printf("INVALID ROW DETECTED. \n");
             printf("Row: %d, Col: %d, Value: %d\n",j, i, sudoku[j][i]); */
             validFlag = 0;
             pthread_exit(0);
@@ -157,73 +165,54 @@ void *validSquares(void* params){
     pthread_exit(0);
 }
 
-int validColsProcess(){ /* checks validity of all columns in process */
-    
-    printf("\ninside cols process\n");
-    fflush(stdout);
+/* checks to see if all 9 columns are valid in 1 process*/
+int validColsProcess(){ 
     for(int i = 0; i < 9; i++){
         /* Reset flags for each col */
-         printf("\ninside col %d\n", i);
-         fflush(stdout);
         int flagCol[9] = {0,0,0,0,0,0,0,0,0}; 
         for(int j = 0; j< 9; j++){
             if(flagCol[sudoku[j][i]-1] == 0){
                 flagCol[sudoku[j][i]-1] = 1;
-                printf("\nflag true\n");
-                fflush(stdout);
             } else{
-                printf("\nflag FALSE\n");
-                fflush(stdout);
-               return 0;
+               return 0; /* invalid value detected - exit process */
             }
         }
     }
     return 1;
 }
 
-int validRowsProcess(){ /* checks validity of all rows in process */
-    printf("\ninside EOWs process\n");
-    fflush(stdout);
+
+/* checks to see if all 9 rows are valid in 1 process*/
+int validRowsProcess(){
     for(int i = 0; i < 9; i++){
         /* Reset flags for each row */
-        printf("\ninside ROW %d", i);
-         fflush(stdout);
         int flagRow[9] = {0,0,0,0,0,0,0,0,0}; 
         for(int j = 0; j< 9; j++){
             if(flagRow[sudoku[i][j]-1] == 0){
                 flagRow[sudoku[i][j]-1] = 1;
-                 printf("\nrow flag true\n");
-                fflush(stdout);
             }
             else{
-               
-                printf("\ntow flag false\n");
-                fflush(stdout);
-                return 0;
+                return 0; /* invalid value detected - exit process */
             }
         }
     }
     return 1;
 }
 
-/* checks all 9 square to see if all squares are valid */
+
+/* checks all 9 squares to see if all squares are valid */
 int validSquaresProcess(){
     int temp = 0;
-
     int flagSquare[9] = {0,0,0,0,0,0,0,0,0}; 
 
     for(int i = 0; i<9; i++){ /* 9 times */
         for(int j = 0; j<9; j++){
              temp = sudoku[i][j]; 
-                if(i%3 == 0 && j%3==0){ /* 9 times */
+                if(i%3 == 0 && j%3==0){ /* 9 top-left corners of sub-squares */
                     if(temp>0 && temp<10 && (flagSquare[temp-1] == 0)){ /* if doesnt exist, change flag to 1 */
                     flagSquare[temp-1] = 1;
-                   /*  printf("valid square %d\n", i);
-                    fflush(stdout); */
                 }
                 else{
-                    /* printf("invalid square %d\n", i);
-                    fflush(stdout); */
                     return 0;
                 }
             }
@@ -234,11 +223,11 @@ int validSquaresProcess(){
 
 int main(int argc, char** argv) {
     /* Reading a sample file */ /* NEED TO ADD A USER INPUT HERE! */
-	FILE *board = fopen("input.txt", "r");
-	fileInput(board);
- printf("funny");
- fflush(stdout);
+    FILE *board = fopen("input.txt", "r");
+    fileInput(board);
+
     int input = atoi(argv[1]);
+    
     /* Prints Sudoku Board */
     printf("Sudoku Board Inputted: \n");
     for(int i = 0; i < 9; i++){
@@ -248,12 +237,9 @@ int main(int argc, char** argv) {
         printf("\n");
     }
    
-    printf("fun");
-    fflush(stdout);
     int nThreads = 0;
-    printf("%d hehe\n",nThreads);
-    fflush(stdout);
-    switch(input){
+    
+    switch(input){ /* define number of thread */
         case 1:
             nThreads = 11;
             break;
@@ -267,13 +253,10 @@ int main(int argc, char** argv) {
             nThreads = 0;
     }
 
-    printf("%d\n",nThreads);
-    fflush(stdout);
     /* for the threads cases */
     pthread_t threads[nThreads];
     int thread_num = 0;
-    // parameters *data = (parameters*) malloc(9*sizeof(parameters));
-
+    
     /* for the process case */
     int shm_fd;
     shm_fd = shm_open("VALID", O_CREAT | O_RDWR, 0666);
@@ -284,44 +267,39 @@ int main(int argc, char** argv) {
     /* clock things */
     clock_t t;
     t = clock();
-    printf("clock has been started: %ld\n", t);
-    fflush(stdout);
 
     
     switch(input){
         case 1:
             /* Option 1: 11 thread, 9 for each square, 1 for all rows and 1 for all columns */
-            printf("depression\n");
+            printf(""); /* cannot have definition of struct after label so dummy print statement */
             fflush(stdout);
+
             struct parameters (*arr[9]) = {NULL};
             for(int i = 0; i<9; i++){
-                arr[i] = (parameters*)malloc(sizeof(parameters)); 
+                arr[i] = (parameters*)malloc(sizeof(parameters)); /* initialize elements of array to memory */
             }
-            // struct parameters *(*data) [] = &arr;
+
             pthread_create(&threads[thread_num], NULL, validRows, NULL);
             pthread_create(&threads[++thread_num], NULL, validColumns, NULL);
             
             int temp=0;
             for(int i = 0; i<9; i++){ /* 9 times */
                 for(int j = 0; j<9; j++){
-                    if(i%3 == 0 && j%3==0){ /* 9 times */
+                    if(i%3 == 0 && j%3==0){ /* 9 top-left corners of sub-squares */
                         
                         arr[temp]->row = i;
                         arr[temp]->col = j;
                        
                         pthread_create(&threads[++thread_num], NULL, validSquares, arr[temp]);
-                        printf("%d\n", thread_num);
-                        fflush(stdout);
                         temp++;
                     }
                 }
             }
-            printf("made it");
-            fflush(stdout);
-            // free (data);
             break;
 
         case 2:
+
             /* Option 2: 27 threads, 1 per square, 1 per row and 1 per column */
             thread_num = 0;
             for(int i = 0; i<9; i++){
@@ -339,21 +317,18 @@ int main(int argc, char** argv) {
                 pthread_create(&threads[thread_num++], NULL, validCol, data2);
             }
             break;
+
         case 3:
+
             /* Option 3: 1 process for all rows, 1 process for all columns, 1 process per square */
-            thread_num = 0;
-            printf("made it case 3");
-            fflush(stdout);
-            pid_t rows = fork();
-            if (rows == 0){
-                printf("made it jhgjgjg");
-                fflush(stdout);
+            
+            pid_t rows = fork(); /* fork a child process to check ALL 9 rows */
+
+            if (rows == 0){ /* check to see if child created successfully */
                 result = validRowsProcess();
                 if(result != 1){
-                    /* valid columns */
+                    /* valid rows */
                     *ptr = result;
-                    printf("made it wooooo");
-                    fflush(stdout);
                 } 
                 _Exit(EXIT_SUCCESS);
             } else {
@@ -361,36 +336,27 @@ int main(int argc, char** argv) {
                 waitpid(rows, &waitFlag, 0);
             }
 
-            pid_t columns = fork();
+            pid_t columns = fork(); /* fork a child process to check ALL 9 columns */
 
-            if (columns == 0){
+            if (columns == 0){ /* check to see if child created successfully */
                 result = validColsProcess();
                 if(result == 1){
                     /* valid columns */
                     *ptr = result;
-                    printf("YAH BABY\n");
-                     fflush(stdout);
-
                 } 
                 _Exit(EXIT_SUCCESS);
             }else{  
-                printf("OHHH NOOOOO\n");
                 int waitFlag;
                 waitpid(columns, &waitFlag, 0);
             }
             
-                
-            pid_t square = fork();
-            if(square == 0 ){
+            pid_t square = fork(); /* fork a child process to check ALL 9 3x3 squares */
+
+            if(square == 0 ){ /* check to see if child created successfully */
                 result = validSquaresProcess();
-            
                 if(result == 1){
-                    /* valid square */
-                    printf("AVLID BABY");
-                    fflush(stdout);
+                    /* valid squares */
                     *ptr = result;
-                    printf("resullt: %d", result);
-                     fflush(stdout);
                 } 
                 _Exit(EXIT_SUCCESS);
             }else {
@@ -401,28 +367,16 @@ int main(int argc, char** argv) {
         break;
     }
 
-    printf("woooN\n");
-            fflush(stdout);
-    // validFlag = *ptr;
     shm_unlink("VALID");
-    printf("first time t: %ld\n", t);
-                    fflush(stdout);
-    clock_t clk = clock();
-     printf("time clock: %ld\n", clk);
-                    fflush(stdout);
-    t = clk - t;
-    printf("time t: %ld\n", t);
-                    fflush(stdout);
+    
+    t = clock() - t;
     double time_tot = ((double)t/CLOCKS_PER_SEC);
 
 
-    for (int i = 0; i<nThreads; i++){
-        printf("thread %d\n", i);
-            fflush(stdout);
+    for (int i = 0; i<nThreads; i++){ /* wait for all threads to finish executing */
         pthread_join(threads[i], NULL);
     }
-    printf("almost there");
-    fflush(stdout);
+    
     
     if(validFlag == 0 ){ /* valid when flag = 1 */
         printf("SOLUTION: NO (%f seconds)\n", time_tot);
@@ -430,10 +384,8 @@ int main(int argc, char** argv) {
     } else{
         printf("SOLUTION: YES (%f seconds)\n", time_tot);
         fflush(stdout);
-
     }
        
-    // free(data);
-    // free(data2);
+   
     return 0;
 }
